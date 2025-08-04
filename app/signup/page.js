@@ -17,7 +17,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 
+import { createUser } from "@/services/userService";
+
 export default function SignupPage() {
+  const [userName, setUserName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -43,6 +46,12 @@ export default function SignupPage() {
 
     try {
       await doCreateUserWithEmailAndPassword(email, password);
+      const userData = {
+        username: userName,
+        email: email,
+        password: password,
+      };
+      await createUser(userData);
       router.push("/"); // Redirect to home page after successful signup
     } catch (error) {
       setError(error.message);
@@ -52,7 +61,7 @@ export default function SignupPage() {
   };
 
   return (
-    <div className=" flex items-center justify-center p-16">
+    <div className=" flex items-center justify-center p-10">
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>Create your account</CardTitle>
@@ -66,6 +75,17 @@ export default function SignupPage() {
               {error && (
                 <div className="text-red-500 text-sm text-center">{error}</div>
               )}
+              <div className="grid gap-2">
+                <Label htmlFor="userName">User Name</Label>
+                <Input
+                  id="userName"
+                  type="text"
+                  placeholder="Siam Sadman"
+                  value={userName}
+                  onChange={(e) => setUserName(e.target.value)}
+                  required
+                />
+              </div>
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
