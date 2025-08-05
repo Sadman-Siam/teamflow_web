@@ -14,7 +14,6 @@ export const getUser = async (query = {}) => {
   try {
     const queryString = new URLSearchParams(query).toString();
     const url = queryString ? `/api/users?${queryString}` : "/api/users";
-    console.log(url);
     const response = await axiosClient.get(url);
     return response.data;
   } catch (error) {
