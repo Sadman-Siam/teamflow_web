@@ -26,7 +26,6 @@ export default function ProfilePage() {
         setUserError(null);
         try {
           const response = await getUser({ email: currentUser.email });
-          console.log("User data fetched:", response);
           setUserData(response);
         } catch (error) {
           console.error("Error fetching user data:", error);
