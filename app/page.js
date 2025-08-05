@@ -18,12 +18,6 @@ export default function Home() {
   const [teamData, setTeamData] = useState(null);
 
   useEffect(() => {
-    if (!loading && !isLoggedIn) {
-      router.push("/login");
-    }
-  }, [isLoggedIn, loading, router]);
-
-  useEffect(() => {
     const fetchUserData = async () => {
       if (currentUser?.email) {
         try {
@@ -67,36 +61,44 @@ export default function Home() {
   };
 
   return (
-    <div className="mt-6 p-2 ">
-      <h1 className="flex justify-center text-2xl">
-        Welcome back,
-        <p className="text-chart-1 font-bold"> {userData?.data.username}</p>
-      </h1>
-      <p className="flex justify-center text-gray-600 text-xl">
-        You&#39;re logged in with email {currentUser.email}
-      </p>
-      <div className="flex flex-col border-4 rounded-2xl mt-6 border-chart-1">
-        <h1 className="text-xl p-4">
-          Create a team and start collaborating with your team members
-        </h1>
-        <div>
-          <Label className="text-lg mx-4" htmlFor="teamName">
-            Team Name
-          </Label>
-          <Input
-            className="w-1/5 mx-4"
-            id="teamName"
-            type="text"
-            placeholder="Enter your team name"
-            value={teamName}
-            onChange={(e) => setTeamName(e.target.value)}
-            required
-          ></Input>
+    <>
+      {isLoggedIn ? (
+        <div className="mt-6 p-2 ">
+          <h1 className="flex justify-center text-2xl">
+            Welcome back,
+            <p className="text-chart-1 font-bold"> {userData?.data.username}</p>
+          </h1>
+          <p className="flex justify-center text-gray-600 text-xl">
+            You&#39;re logged in with email {currentUser.email}
+          </p>
+          <div className="flex flex-col border-4 rounded-2xl mt-6 border-chart-1">
+            <h1 className="text-xl p-4">
+              Create a team and start collaborating with your team members
+            </h1>
+            <div>
+              <Label className="text-lg mx-4" htmlFor="teamName">
+                Team Name
+              </Label>
+              <Input
+                className="w-1/5 mx-4"
+                id="teamName"
+                type="text"
+                placeholder="Enter your team name"
+                value={teamName}
+                onChange={(e) => setTeamName(e.target.value)}
+                required
+              ></Input>
+            </div>
+            <Button className="w-1/5 m-4" onClick={handleCreateTeam}>
+              Create Team
+            </Button>
+          </div>
         </div>
-        <Button className="w-1/5 m-4" onClick={handleCreateTeam}>
-          Create Team
-        </Button>
-      </div>
-    </div>
+      ) : (
+        <div>
+          <p>LOGIN</p>
+        </div>
+      )}
+    </>
   );
 }
