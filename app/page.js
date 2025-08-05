@@ -46,12 +46,7 @@ export default function Home() {
       setTeamData(tempData);
       await updateUser(
         { email: currentUser.email },
-        {
-          team: {
-            $push: { teamID: teamData._id },
-            $push: { teamName: teamName },
-          },
-        }
+        { $push: { team: { teamID: tempData._id, teamName: teamName } } }
       );
       setTeamName("");
       router.push("/teambase");
@@ -95,8 +90,27 @@ export default function Home() {
           </div>
         </div>
       ) : (
-        <div>
-          <p>LOGIN</p>
+        <div className="flex flex-col items-center p-4 mt-20">
+          <h1 className="text-6xl text-chart-1">Welcome to TeamFlow</h1>
+          <p className="text-gray-600">
+            Its a all in one team collaboration tool
+          </p>
+          <p className="text-gray-600">Let&#39;s get started</p>
+          <div className="flex justify-center">
+            <Link href="/login">
+              <Button
+                className="mt-4 hover:underline text-chart-1"
+                variant="link"
+              >
+                Login
+              </Button>
+            </Link>
+            <Link href="/signup">
+              <Button className="mt-4 text-chart-1" variant="link">
+                Sign Up
+              </Button>
+            </Link>
+          </div>
         </div>
       )}
     </>
