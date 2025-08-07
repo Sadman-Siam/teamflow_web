@@ -5,10 +5,34 @@ import Link from "next/link";
 import { useAuth } from "@/app/context/authcontext";
 import { doSignOut } from "@/app/firebase/auth";
 import { useRouter } from "next/navigation";
+import { gsap } from "gsap";
+import { useEffect, useRef } from "react";
 
 export default function NavBar() {
   const { currentUser, isLoggedIn } = useAuth();
   const router = useRouter();
+  const navbarTitleRef = useRef(null);
+  const navbarRef = useRef(null);
+
+  useEffect(() => {
+    // Ensure the element is mounted before animating
+
+    if (navbarRef.current) {
+      gsap.fromTo(
+        navbarRef.current,
+        {
+          y: -100,
+          opacity: 0,
+        },
+        {
+          y: 0,
+          opacity: 1,
+          duration: 1,
+          ease: "power2.out",
+        }
+      );
+    }
+  }, []); // Empty dependency array means this runs once on mount
 
   const handleSignOut = async () => {
     try {
@@ -20,9 +44,14 @@ export default function NavBar() {
   };
 
   return (
-    <div className="flex items-center justify-between p-4 text-white border-b-4 border-chart-1 rounded-2xl">
+    <div
+      ref={navbarRef}
+      className="flex items-center justify-between p-4 text-white border-b-4 border-chart-1 rounded-2xl"
+    >
       <Link href="/">
-        <h1 className="text-chart-1 font-bold text-xl ">Team Flow</h1>
+        <h1 ref={navbarTitleRef} className="text-chart-1 font-bold text-xl">
+          Team Flow
+        </h1>
       </Link>
       <div className="flex space-x-2">
         {isLoggedIn ? (
