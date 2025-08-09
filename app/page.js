@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getUser, updateUser } from "@/services/userService";
 import { createTeam } from "@/services/teamService";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Label } from "@radix-ui/react-label";
 import Link from "next/link";
+import { gsap } from "gsap";
 
 export default function Home() {
   const router = useRouter();
@@ -16,6 +17,7 @@ export default function Home() {
   const [userData, setUserData] = useState(null);
   const [teamName, setTeamName] = useState("");
   const [teamData, setTeamData] = useState(null);
+  const landingRef = useRef(null);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -54,7 +56,15 @@ export default function Home() {
       console.error("Error creating team:", error);
     }
   };
-
+  useEffect(() => {
+    if (landingRef.current) {
+      gsap.fromTo(
+        landingRef.current,
+        { scale: 0 },
+        { scale: 1, duration: 1, delay: 0.5, ease: "power2.out" }
+      );
+    }
+  }, []);
   return (
     <>
       {isLoggedIn ? (
@@ -90,7 +100,7 @@ export default function Home() {
           </div>
         </div>
       ) : (
-        <div className="flex flex-col items-center p-4 mt-20">
+        <div ref={landingRef} className="flex flex-col items-center p-4 mt-20">
           <h1 className="text-6xl text-chart-1">Welcome to TeamFlow</h1>
           <p className="text-gray-600">
             Its a all in one team collaboration tool
