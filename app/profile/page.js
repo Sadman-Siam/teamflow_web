@@ -72,9 +72,7 @@ export default function ProfilePage() {
                 <p className="text-sm font-medium text-muted-foreground">
                   User Name
                 </p>
-                <p className="text-lg">
-                  {userData.data.username || "Not provided"}
-                </p>
+                <p className="text-lg">{userData.username || "Not provided"}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">
@@ -97,7 +95,7 @@ export default function ProfilePage() {
                   Your Teams
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {userData.data.teams?.length || 0} teams
+                  {userData.teams?.length || 0} teams
                 </p>
               </div>
             </div>

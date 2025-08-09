@@ -15,6 +15,7 @@ export default function Home() {
   const router = useRouter();
   const { currentUser, isLoggedIn, loading } = useAuth();
   const [userData, setUserData] = useState(null);
+  const [userError, setUserError] = useState(null);
   const [teamName, setTeamName] = useState("");
   const [teamData, setTeamData] = useState(null);
   const landingRef = useRef(null);
@@ -24,6 +25,7 @@ export default function Home() {
       if (currentUser?.email) {
         try {
           const response = await getUser({ email: currentUser.email });
+          console.log("User data fetched:", response);
           setUserData(response);
         } catch (error) {
           console.error("Error fetching user data:", error);
@@ -38,18 +40,28 @@ export default function Home() {
 
   const handleCreateTeam = async (event) => {
     event.preventDefault();
-    setTeamData({
+
+    // Check if userData is loaded before proceeding
+    if (!userData) {
+      console.error("User data not loaded yet");
+      return;
+    }
+
+    const newTeamData = {
       name: teamName,
-      owner: userData.data.username,
+      owner: userData?.data?.username || userData?.username || "Unknown",
       ownerEmail: currentUser.email,
-    });
+    };
+
     try {
-      const tempData = await createTeam(teamData);
-      setTeamData(tempData);
+      const createdTeam = await createTeam(newTeamData);
+      console.log("Created team:", createdTeam);
+
       await updateUser(
         { email: currentUser.email },
-        { $push: { team: { teamID: tempData._id, teamName: teamName } } }
+        { $push: { teams: { teamID: createdTeam._id, teamName: teamName } } }
       );
+
       setTeamName("");
       router.push("/teambase");
     } catch (error) {
@@ -57,47 +69,60 @@ export default function Home() {
     }
   };
   useEffect(() => {
-    if (landingRef.current) {
+    if (landingRef.current && !isLoggedIn) {
       gsap.fromTo(
         landingRef.current,
-        { scale: 0 },
-        { scale: 1, duration: 1, delay: 0.5, ease: "power2.out" }
+        { scale: 0, opacity: 0 },
+        { scale: 1, opacity: 1, duration: 1, delay: 0.5, ease: "power2.out" }
       );
     }
-  }, []);
+  }, [isLoggedIn]);
   return (
     <>
       {isLoggedIn ? (
         <div className="mt-6 p-2 ">
           <h1 className="flex justify-center text-2xl">
             Welcome back,
-            <p className="text-chart-1 font-bold"> {userData?.data.username}</p>
+            <p className="text-chart-1 font-bold">
+              {userData?.data?.username || userData?.username || "User"}
+            </p>
           </h1>
           <p className="flex justify-center text-gray-600 text-xl">
-            You&#39;re logged in with email {currentUser.email}
+            You&#39;re logged in with email {currentUser?.email}
           </p>
-          <div className="flex flex-col border-4 rounded-2xl mt-6 border-chart-1">
-            <h1 className="text-xl p-4">
-              Create a team and start collaborating with your team members
-            </h1>
-            <div>
-              <Label className="text-lg mx-4" htmlFor="teamName">
-                Team Name
-              </Label>
-              <Input
-                className="w-1/5 mx-4"
-                id="teamName"
-                type="text"
-                placeholder="Enter your team name"
-                value={teamName}
-                onChange={(e) => setTeamName(e.target.value)}
-                required
-              ></Input>
+
+          {userData ? (
+            <div className="flex flex-col border-4 rounded-2xl mt-6 border-chart-1">
+              <h1 className="text-xl p-4">
+                Create a team and start collaborating with your team members
+              </h1>
+              <div>
+                <Label className="text-lg mx-4" htmlFor="teamName">
+                  Team Name
+                </Label>
+                <Input
+                  className="w-1/5 mx-4"
+                  id="teamName"
+                  type="text"
+                  placeholder="Enter your team name"
+                  value={teamName}
+                  onChange={(e) => setTeamName(e.target.value)}
+                  required
+                />
+              </div>
+              <Button
+                className="w-1/5 m-4"
+                onClick={handleCreateTeam}
+                disabled={!teamName.trim()}
+              >
+                Create Team
+              </Button>
             </div>
-            <Button className="w-1/5 m-4" onClick={handleCreateTeam}>
-              Create Team
-            </Button>
-          </div>
+          ) : (
+            <div className="flex justify-center mt-6">
+              <p>Loading user data...</p>
+            </div>
+          )}
         </div>
       ) : (
         <div ref={landingRef} className="flex flex-col items-center p-4 mt-20">
