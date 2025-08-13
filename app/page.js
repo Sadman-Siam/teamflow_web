@@ -2,9 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/context/authcontext";
+import { useUserData } from "@/app/context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { getUser, updateUser } from "@/services/userService";
+import { updateUser } from "@/services/userService";
 import { createTeam } from "@/services/teamService";
 import { useEffect, useState, useRef } from "react";
 import { Label } from "@radix-ui/react-label";
@@ -14,29 +15,9 @@ import { gsap } from "gsap";
 export default function Home() {
   const router = useRouter();
   const { currentUser, isLoggedIn, loading } = useAuth();
-  const [userData, setUserData] = useState(null);
-  const [userError, setUserError] = useState(null);
+  const { userData, userLoading, refetchUserData } = useUserData();
   const [teamName, setTeamName] = useState("");
-  const [teamData, setTeamData] = useState(null);
   const landingRef = useRef(null);
-
-  useEffect(() => {
-    const fetchUserData = async () => {
-      if (currentUser?.email) {
-        try {
-          const response = await getUser({ email: currentUser.email });
-          console.log("User data fetched:", response);
-          setUserData(response);
-        } catch (error) {
-          console.error("Error fetching user data:", error);
-          setUserError(error.message);
-        }
-      }
-    };
-    if (isLoggedIn && currentUser?.email) {
-      fetchUserData();
-    }
-  }, [currentUser?.email, isLoggedIn]);
 
   const handleCreateTeam = async (event) => {
     event.preventDefault();
@@ -61,6 +42,9 @@ export default function Home() {
         { email: currentUser.email },
         { $push: { teams: { teamID: createdTeam._id, teamName: teamName } } }
       );
+
+      // Refetch user data to get updated teams
+      refetchUserData();
 
       setTeamName("");
       router.push("/teambase");
@@ -91,7 +75,7 @@ export default function Home() {
             You&#39;re logged in with email {currentUser?.email}
           </p>
 
-          {userData ? (
+          {userData && !userLoading ? (
             <div className="flex flex-col border-4 rounded-2xl mt-6 border-chart-1">
               <h1 className="text-xl p-4">
                 Create a team and start collaborating with your team members
