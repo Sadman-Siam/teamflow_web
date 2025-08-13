@@ -37,17 +37,18 @@ export default function Home() {
     try {
       const createdTeam = await createTeam(newTeamData);
       console.log("Created team:", createdTeam);
-
+      // Update user data to include the new team
+      const teamID = createdTeam._id;
       await updateUser(
         { email: currentUser.email },
-        { $push: { teams: { teamID: createdTeam._id, teamName: teamName } } }
+        { $push: { team: { teamID: createdTeam._id, teamName: teamName } } }
       );
 
       // Refetch user data to get updated teams
       refetchUserData();
 
       setTeamName("");
-      router.push("/teambase");
+      router.push(`/teambase?teamID=${teamID}`);
     } catch (error) {
       console.error("Error creating team:", error);
     }

@@ -13,8 +13,10 @@ export const createUser = async (userData) => {
 export const getUser = async (query = {}) => {
   try {
     const queryString = new URLSearchParams(query).toString();
+    console.log("Query String:", queryString);
     const url = queryString ? `/api/users?${queryString}` : "/api/users";
     const response = await axiosClient.get(url);
+    console.log(url);
     return response.data;
   } catch (error) {
     console.error("Error fetching user:", error);

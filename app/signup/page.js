@@ -48,7 +48,7 @@ export default function SignupPage() {
       await doCreateUserWithEmailAndPassword(email, password);
       const userData = {
         username: userName,
-        email: email,
+        email: email.toLowerCase(),
         password: password,
       };
       await createUser(userData);
@@ -93,7 +93,7 @@ export default function SignupPage() {
                   type="email"
                   placeholder="m@example.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => setEmail(e.target.value.toLowerCase())}
                   required
                 />
               </div>
