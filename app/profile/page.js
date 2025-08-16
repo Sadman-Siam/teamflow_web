@@ -5,6 +5,7 @@ import { useAuth } from "@/app/context/authcontext";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 export default function ProfilePage() {
   const { currentUser, isLoggedIn, loading } = useAuth();
@@ -30,7 +31,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="flex p-4">
+    <div className="flex-col py-4">
       <Card className="w-screen">
         <CardHeader>
           <CardTitle className="text-2xl">Profile Details</CardTitle>
@@ -55,7 +56,7 @@ export default function ProfilePage() {
                   Email Address
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {currentUser?.email}
+                  {userData?.email}
                 </p>
               </div>
               <div>
@@ -80,6 +81,32 @@ export default function ProfilePage() {
           )}
         </CardContent>
       </Card>
+      <div className="mt-4">
+        <h1 className="text-2xl font-bold mb-4">Team Requests</h1>
+        {userData?.teamRequests && userData.teamRequests.length > 0 ? (
+          <div className="space-y-2">
+            {userData.teamRequests.map((request, index) => (
+              <div
+                key={request.teamId || request.teamName || index}
+                className="p-4 border rounded-lg bg-gray-50"
+              >
+                <p>
+                  <strong>Team Name:</strong> {request.teamName}
+                </p>
+                <p>
+                  <strong>Team ID:</strong> {request.teamId}
+                </p>
+                <div className="mt-2 space-x-2">
+                  <Button>Accept</Button>
+                  <Button>Decline</Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-gray-500">No team requests at the moment</p>
+        )}
+      </div>
     </div>
   );
 }
