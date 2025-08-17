@@ -29,6 +29,59 @@ export default function TeamPage({ params }) {
   const [taskName, setTaskName] = useState("");
   const [description, setDescription] = useState("");
   const [date, setDate] = useState("");
+  const [currentRole, setCurrentRole] = useState(false);
+  const [selectedMembers, setSelectedMembers] = useState([]);
+
+  const handleMemberSelect = (memberUserName, isChecked) => {
+    if (isChecked) {
+      setSelectedMembers((prev) => [...prev, memberUserName]);
+    } else {
+      setSelectedMembers((prev) =>
+        prev.filter((name) => name !== memberUserName)
+      );
+    }
+  };
+
+  const handleAssignTask = async () => {
+    try {
+      if (!taskName || !description || !date || selectedMembers.length === 0) {
+        alert("Please fill in all fields and select at least one team member");
+        return;
+      }
+
+      // Convert selectedMembers array to the format expected by backend
+      const assignedToArray = selectedMembers.map((memberUserName) => ({
+        userName: memberUserName,
+      }));
+
+      await updateTeam(
+        { name: teamName },
+        {
+          $push: {
+            teamTasks: {
+              taskName: taskName,
+              description: description,
+              assignedTo: assignedToArray,
+              dueDate: date,
+            },
+          },
+        }
+      );
+
+      // Clear form after successful assignment
+      setTaskName("");
+      setDescription("");
+      setDate("");
+      setSelectedMembers([]);
+
+      alert(
+        `Task "${taskName}" assigned to ${selectedMembers.length} member(s) successfully!`
+      );
+    } catch (error) {
+      console.error("Error assigning task:", error);
+      alert("Error assigning task. Please try again.");
+    }
+  };
   const handelSearch = function async(userName) {
     return async () => {
       try {
@@ -58,133 +111,187 @@ export default function TeamPage({ params }) {
       }
     };
 
-    fetchTeamData();
-  }, [teamName, teamID]);
+    if (teamName && currentUser?.email) {
+      fetchTeamData();
+    }
+  }, [teamName, teamID, currentUser?.email]);
+
+  useEffect(() => {
+    if (teamData?.members && currentUser?.email) {
+      const currentMember = teamData.members.find(
+        (member) => member.userEmail === currentUser.email
+      );
+
+      if (currentMember && currentMember.role === "admin") {
+        setCurrentRole(true);
+        console.log("User is an admin of the team");
+      } else {
+        setCurrentRole(false);
+        console.log("User is not an admin of the team");
+      }
+    }
+  }, [teamData, currentUser?.email]);
 
   return (
     <>
-      <div>
+      <div className="flex flex-col items-center justify-center p-2 text-2xl">
         <h1>Welcome to Team: {teamData?.name}</h1>
-        <p>Team Owner: {teamData?.owner}</p>
+        <p className="text-sm text-gray-500">Team Owner: {teamData?.owner}</p>
       </div>
-      <div>
-        <h1>Add Members</h1>
-        <Label>Search by User Name</Label>
-        <Input
-          id="userName"
-          value={userName}
-          type="text"
-          onChange={(e) => setUserName(e.target.value)}
-          requird
-        ></Input>
-        <Button onClick={handelSearch(userName)}>Search</Button>
-      </div>
-      {searchedUser !== null ? (
-        <div>
-          <h2>User Found:</h2>
-          <p>Name: {searchedUser.username}</p>
-          <p>Email: {searchedUser.email}</p>
-          <Button
-            onClick={async () => {
-              try {
-                await updateUser(
-                  { email: searchedUser.email },
-                  {
-                    $push: {
-                      teamRequests: { teamId: teamID, teamName: teamName },
-                    },
-                  }
-                );
-                window.alert("Team Request sent to User successfully!");
-                setSearchedUser(null);
-                fetchTeamData();
-                refetchUserData();
-              } catch (error) {
-                console.error("Error updating team:", error);
-              }
-            }}
-          >
-            Add to Team
-          </Button>
+      {currentRole ? (
+        <div className=" p-4 flex flex-wrap">
+          <div className="flex flex-col rounded-2xl border-2 w-1/2 p-2">
+            <h1 className="text-lg p-2">Add Members</h1>
+            <div className="w-1/3">
+              <Label className="p-2">Search by User Name</Label>
+              <Input
+                id="userName"
+                value={userName}
+                type="text"
+                onChange={(e) => setUserName(e.target.value)}
+                requird
+                className="p-2"
+              ></Input>
+            </div>
+            <Button className="w-1/3 mt-2" onClick={handelSearch(userName)}>
+              Search
+            </Button>
+          </div>
+          {searchedUser !== null ? (
+            <div className="flex w-1/2 ">
+              <div className=" flex-col rounded-2xl border-2 p-2 w-full">
+                <h2 className="text-lg p-2">User Found:</h2>
+                <p className="px-2">Name: {searchedUser.username}</p>
+                <p className="px-2">Email: {searchedUser.email}</p>
+                <Button
+                  className="m-2 w-1/3"
+                  onClick={async () => {
+                    try {
+                      await updateUser(
+                        { email: searchedUser.email },
+                        {
+                          $push: {
+                            teamRequests: {
+                              teamId: teamID,
+                              teamName: teamName,
+                            },
+                          },
+                        }
+                      );
+                      window.alert("Team Request sent to User successfully!");
+                      setSearchedUser(null);
+                      fetchTeamData();
+                      refetchUserData();
+                    } catch (error) {
+                      console.error("Error updating team:", error);
+                    }
+                  }}
+                >
+                  Add to Team
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <></>
+          )}
+          <Card className="w-screen mt-2">
+            <CardHeader>
+              <CardTitle className="text-2xl">Create a task</CardTitle>
+              <CardDescription>
+                Enter your task details and assign it to a team member
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form className="flex">
+                <div className="flex gap-6 w-1/2 p-2">
+                  <div>
+                    <div className="grid gap-2">
+                      <Label className="text-lg">Task Name</Label>
+                      <Input
+                        id="taskName"
+                        type="text"
+                        placeholder="Enter task title"
+                        value={taskName}
+                        onChange={(e) => setTaskName(e.target.value)}
+                        required
+                        className="w-96"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <div className="flex items-center">
+                        <Label className="text-lg">Description</Label>
+                      </div>
+                      <Input
+                        id="description"
+                        type="text"
+                        placeholder="Enter task description"
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        required
+                        className="h-20"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <div className="flex items-center">
+                        <Label className="text-lg">Task Submission Date</Label>
+                      </div>
+                      <Input
+                        id="date"
+                        type="date"
+                        value={date}
+                        onChange={(e) => setDate(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="flex-col  w-1/2 p-2">
+                  <h1 className="text-lg font-semibold">Assign To</h1>
+                  {teamData?.members?.map((member) => (
+                    <div key={member.userName} className="flex space-x-2 p-2">
+                      <Input
+                        type="checkbox"
+                        id={`member-${member.userName}`}
+                        checked={selectedMembers.includes(member.userName)}
+                        onChange={(e) =>
+                          handleMemberSelect(member.userName, e.target.checked)
+                        }
+                        className="w-4 h-4"
+                      />
+                      <Label
+                        htmlFor={`member-${member.userName}`}
+                        className="cursor-pointer"
+                      >
+                        {member.userName} ({member.role})
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </form>
+            </CardContent>
+            <CardFooter className="flex-col gap-2">
+              <Button
+                type="button"
+                className="w-full"
+                onClick={handleAssignTask}
+                disabled={
+                  !taskName ||
+                  !description ||
+                  !date ||
+                  selectedMembers.length === 0
+                }
+              >
+                Create Task
+              </Button>
+            </CardFooter>
+          </Card>
         </div>
       ) : (
-        <></>
+        <div>
+          <h1>User Actions</h1>
+          <Button>View Team</Button>
+        </div>
       )}
-      <Card className="w-screen ">
-        <CardHeader>
-          <CardTitle>Create a task</CardTitle>
-          <CardDescription>
-            Enter your task details and assign it to a team member
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form>
-            <div className="flex flex-col gap-6 w-1/3">
-              <div className="grid gap-2">
-                <Label>Task Name</Label>
-                <Input
-                  id="taskName"
-                  type="text"
-                  placeholder="Enter task title"
-                  value={taskName}
-                  onChange={(e) => setTaskName(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="grid gap-2">
-                <div className="flex items-center">
-                  <Label>Description</Label>
-                </div>
-                <Input
-                  id="description"
-                  type="text"
-                  placeholder="Enter task description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  required
-                  className="h-20"
-                />
-              </div>
-              <div className="grid gap-2">
-                <div className="flex items-center">
-                  <Label>Task Submission Date</Label>
-                </div>
-                <Input
-                  id="date"
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-            <div>
-              <h1>Assign To</h1>
-              {teamData?.members?.map((member) => (
-                <div key={member.userName}>
-                  <h1>{member.userName}</h1>
-                  <h1>{member.userId}</h1>
-                  <h1>{member.role}</h1>
-                  <Label>{member.userName}</Label>
-                  {/* <Input
-                    type="checkbox"
-                    checked={member.assigned}
-                    //={() => handleAssignTask(member.userName)}
-                  /> */}
-                </div>
-              ))}
-            </div>
-          </form>
-        </CardContent>
-        <CardFooter className="flex-col gap-2">
-          <Button type="submit" className="w-full">
-            Login
-          </Button>
-          <Button variant="outline" className="w-full">
-            Login with Google
-          </Button>
-        </CardFooter>
-      </Card>
     </>
   );
 }
