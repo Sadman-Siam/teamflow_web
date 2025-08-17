@@ -6,7 +6,7 @@ import { useUserData } from "@/app/context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { updateUser } from "@/services/userService";
-import { createTeam } from "@/services/teamService";
+import { createTeam, updateTeam } from "@/services/teamService";
 import { useEffect, useState, useRef } from "react";
 import { Label } from "@radix-ui/react-label";
 import Link from "next/link";
@@ -61,6 +61,19 @@ export default function Home() {
           },
         }
       );
+      await updateTeam(
+        { name: teamName },
+        {
+          $push: {
+            members: {
+              userName: userData.username,
+              userEmail: currentUser.email,
+              role: "admin",
+            },
+          },
+        }
+      );
+
       setTeamName("");
       refetchUserData();
     } catch (error) {
@@ -92,7 +105,7 @@ export default function Home() {
 
           {userData && !userLoading ? (
             <div>
-              <div className="flex flex-col border-4 rounded-2xl mt-6 border-chart-1">
+              <div className="flex flex-col border-2 rounded-2xl mt-6 border-chart-1">
                 <h1 className="text-xl p-4">
                   Create a team and start collaborating with your team members
                 </h1>
@@ -126,7 +139,7 @@ export default function Home() {
                     (
                       <div
                         key={team.teamName}
-                        className="mx-1 p-2 flex flex-col border-4 rounded-2xl mt-3 border-chart-1 w-1/5 h-30"
+                        className="mx-1 p-2 flex flex-col border-2 rounded-2xl mt-3 border-chart-1 w-1/5 h-30"
                       >
                         <h2 className="font-semibold  ">
                           Name :{team.teamName}

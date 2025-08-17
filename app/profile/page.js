@@ -6,11 +6,75 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { getUser, updateUser, deleteUser } from "@/services/userService";
+import { updateTeam } from "@/services/teamService";
 
 export default function ProfilePage() {
   const { currentUser, isLoggedIn, loading } = useAuth();
-  const { userData, userLoading } = useUserData();
+  const { userData, userLoading, refetchUserData } = useUserData();
   const router = useRouter();
+
+  const handleTeamRequestAccept = async (teamId, teamName) => {
+    try {
+      await updateUser(
+        { email: currentUser.email },
+        {
+          $push: {
+            team: {
+              teamID: teamId,
+              teamName: teamName,
+            },
+          },
+        }
+      );
+      await updateUser(
+        { email: currentUser.email },
+        {
+          $pull: {
+            teamRequests: {
+              teamId: teamId,
+            },
+          },
+        }
+      );
+      await updateTeam(
+        { name: teamName },
+        {
+          $push: {
+            members: {
+              userName: userData.username,
+              userEmail: currentUser.email,
+            },
+          },
+        }
+      );
+      await refetchUserData();
+
+      console.log("Team request accepted successfully!");
+    } catch (error) {
+      console.error("Error accepting team request:", error);
+    }
+  };
+
+  const handleTeamRequestDecline = async (teamId) => {
+    try {
+      await updateUser(
+        { email: currentUser.email },
+        {
+          $pull: {
+            teamRequests: {
+              teamId: teamId,
+            },
+          },
+        }
+      );
+      await refetchUserData();
+
+      console.log("Team request declined successfully!");
+    } catch (error) {
+      console.error("Error declining team request:", error);
+    }
+  };
 
   useEffect(() => {
     if (!loading && !isLoggedIn) {
@@ -27,7 +91,7 @@ export default function ProfilePage() {
   }
 
   if (!isLoggedIn) {
-    return null; // Will redirect to login
+    return null;
   }
 
   return (
@@ -97,8 +161,18 @@ export default function ProfilePage() {
                   <strong>Team ID:</strong> {request.teamId}
                 </p>
                 <div className="mt-2 space-x-2">
-                  <Button>Accept</Button>
-                  <Button>Decline</Button>
+                  <Button
+                    onClick={() =>
+                      handleTeamRequestAccept(request.teamId, request.teamName)
+                    }
+                  >
+                    Accept
+                  </Button>
+                  <Button
+                    onClick={() => handleTeamRequestDecline(request.teamId)}
+                  >
+                    Decline
+                  </Button>
                 </div>
               </div>
             ))}
