@@ -13,7 +13,7 @@ import { useAuth } from "@/app/context/authcontext";
 import { useUserData } from "@/app/context";
 import { getTeam, updateTeam, deleteTeam } from "@/services/teamService";
 import { getUser, updateUser } from "@/services/userService";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,21 @@ export default function TeamPage({ params }) {
   const [date, setDate] = useState("");
   const [currentRole, setCurrentRole] = useState(false);
   const [selectedMembers, setSelectedMembers] = useState([]);
+
+  // Move fetchTeamData outside useEffect so it can be reused
+  const fetchTeamData = useCallback(async () => {
+    try {
+      const teamData = await getTeam({ name: teamName });
+      if (teamData) {
+        console.log("Team data fetched:", teamData);
+        setTeamData(teamData);
+      } else {
+        console.error("No team data found for the given name or ID");
+      }
+    } catch (error) {
+      console.error("Error fetching team data:", error);
+    }
+  }, [teamName]);
 
   const handleMemberSelect = (memberUserName, isChecked) => {
     if (isChecked) {
@@ -73,10 +88,11 @@ export default function TeamPage({ params }) {
       setDescription("");
       setDate("");
       setSelectedMembers([]);
-
+      fetchTeamData();
       alert(
         `Task "${taskName}" assigned to ${selectedMembers.length} member(s) successfully!`
       );
+      // Optionally, you can refetch team data to reflect the new task
     } catch (error) {
       console.error("Error assigning task:", error);
       alert("Error assigning task. Please try again.");
@@ -97,24 +113,10 @@ export default function TeamPage({ params }) {
     };
   };
   useEffect(() => {
-    const fetchTeamData = async () => {
-      try {
-        const teamData = await getTeam({ name: teamName });
-        if (teamData) {
-          console.log("Team data fetched:", teamData);
-          setTeamData(teamData);
-        } else {
-          console.error("No team data found for the given name or ID");
-        }
-      } catch (error) {
-        console.error("Error fetching team data:", error);
-      }
-    };
-
     if (teamName && currentUser?.email) {
       fetchTeamData();
     }
-  }, [teamName, teamID, currentUser?.email]);
+  }, [teamName, teamID, currentUser?.email, fetchTeamData]);
 
   useEffect(() => {
     if (teamData?.members && currentUser?.email) {
@@ -292,6 +294,18 @@ export default function TeamPage({ params }) {
           <Button>View Team</Button>
         </div>
       )}
+      <div>
+        <h1>Current On going tasks</h1>
+        {teamData?.teamTasks?.map((task, index) => (
+          <div key={index}>
+            <h2>{task.taskName}</h2>
+            <p>{task.description}</p>
+            <p>{task.status}</p>
+            <p>Due Date: {task.dueDate}</p>
+            <p>Assigned To: {task.assignedTo.join(", ")}</p>
+          </div>
+        ))}
+      </div>
     </>
   );
 }
