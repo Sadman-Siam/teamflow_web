@@ -289,21 +289,56 @@ export default function TeamPage({ params }) {
           </Card>
         </div>
       ) : (
-        <div>
-          <h1>User Actions</h1>
-          <Button>View Team</Button>
-        </div>
+        <></>
       )}
-      <div>
-        <h1>Current On going tasks</h1>
+      <h1 className="text-2xl font-semibold p-2">Current ongoing tasks</h1>
+      <div className="border-8 flex-wrap">
         {teamData?.teamTasks?.map((task, index) => (
-          <div key={index}>
-            <h2>{task.taskName}</h2>
-            <p>{task.description}</p>
-            <p>{task.status}</p>
-            <p>Due Date: {task.dueDate}</p>
-            <p>Assigned To: {task.assignedTo.join(", ")}</p>
-          </div>
+          <>
+            {task.status != "done" ? (
+              <div className=" flex-col font-semibold text-lg text-wrap border p-2 m-2 rounded-2xl w-1/3">
+                <h2 className="p-1">Task Name: {task.taskName}</h2>
+                <p className="p-1">Task Description: {task.description}</p>
+                <p className="p-1">Task Status: {task.status}</p>
+                <p className="p-1">Due Date: {task.dueDate.slice(0, 10)}</p>
+                <p className="p-1">Assigned To: {task.assignedTo.join(", ")}</p>
+                <Button
+                  className="m-1"
+                  onClick={async () => {
+                    await updateTeam(
+                      { name: teamName, "teamTasks.taskName": task.taskName },
+                      {
+                        $set: {
+                          "teamTasks.$.status": "in-progress",
+                        },
+                      }
+                    );
+                    fetchTeamData();
+                  }}
+                >
+                  In-progress
+                </Button>
+                <Button
+                  className=""
+                  onClick={async () => {
+                    await updateTeam(
+                      { name: teamName, "teamTasks.taskName": task.taskName },
+                      {
+                        $set: {
+                          "teamTasks.$.status": "done",
+                        },
+                      }
+                    );
+                    fetchTeamData();
+                  }}
+                >
+                  Done
+                </Button>
+              </div>
+            ) : (
+              <></>
+            )}
+          </>
         ))}
       </div>
     </>
