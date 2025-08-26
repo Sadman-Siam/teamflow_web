@@ -13,6 +13,12 @@ import { useAuth } from "@/app/context/authcontext";
 import { useUserData } from "@/app/context";
 import { getTeam, updateTeam, deleteTeam } from "@/services/teamService";
 import { getUser, updateUser } from "@/services/userService";
+import {
+  getDiscussions,
+  createDiscussion,
+  updateDiscussion,
+  deleteDiscussion,
+} from "@/services/discussionService";
 import { useEffect, useState, useCallback } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -25,6 +31,11 @@ export default function TeamPage({ params }) {
   const [userName, setUserName] = useState("");
   const [searchedUser, setSearchedUser] = useState(null);
   const [teamData, setTeamData] = useState(null);
+  const [searchOn, setSearchOn] = useState(false);
+  const [addTask, setAddTask] = useState(false);
+  const [chat, setChat] = useState(false);
+  const [comment, setComment] = useState("");
+  const [discussionData, setDiscussionData] = useState([]);
   //
   const [taskName, setTaskName] = useState("");
   const [description, setDescription] = useState("");
@@ -46,6 +57,38 @@ export default function TeamPage({ params }) {
       console.error("Error fetching team data:", error);
     }
   }, [teamName]);
+
+  const fetchDiscussionData = useCallback(async () => {
+    try {
+      const discussions = await getDiscussions();
+      if (discussions) {
+        console.log("Discussions fetched:", discussions);
+        setDiscussionData(discussions);
+      } else {
+        console.error("No discussions found for the given team ID");
+      }
+    } catch (error) {
+      console.error("Error fetching discussions:", error);
+    }
+  }, []);
+
+  const handleChat = async () => {
+    try {
+      if (chat && comment != "") {
+        const newChat = await createDiscussion({
+          userName: userData.username,
+          message: comment,
+        });
+        if (newChat) {
+          console.log("Chat created:", newChat);
+          fetchDiscussionData();
+          setComment("");
+        }
+      }
+    } catch (error) {
+      console.error("Error creating chat:", error);
+    }
+  };
 
   const handleMemberSelect = (memberUserName, isChecked) => {
     if (isChecked) {
@@ -135,12 +178,90 @@ export default function TeamPage({ params }) {
   }, [teamData, currentUser?.email]);
 
   return (
-    <>
-      <div className="flex flex-col items-center justify-center p-2 text-2xl">
-        <h1>Welcome to Team: {teamData?.name}</h1>
-        <p className="text-sm text-gray-500">Team Owner: {teamData?.owner}</p>
+    <div className="">
+      <div className="flex items-center justify-between px-4 py-2 text-2xl">
+        <div>
+          <h1>Welcome to Team: {teamData?.name}</h1>
+          <p className="text-sm text-gray-500">Team Owner: {teamData?.owner}</p>
+        </div>
+        {currentRole ? (
+          <div className="space-x-2">
+            <Button
+              onClick={() => {
+                searchOn ? setSearchOn(false) : setSearchOn(true);
+              }}
+            >
+              Search
+            </Button>
+            <Button
+              onClick={() => {
+                addTask ? setAddTask(false) : setAddTask(true);
+              }}
+            >
+              Add Task
+            </Button>
+            <Button
+              onClick={() => {
+                chat ? setChat(false) : setChat(true);
+              }}
+            >
+              Chat
+            </Button>
+          </div>
+        ) : (
+          <div className="space-x-2">
+            <Button
+              onClick={() => {
+                chat ? setChat(false) : setChat(true);
+              }}
+            >
+              Chat
+            </Button>
+          </div>
+        )}
       </div>
-      {currentRole ? (
+      {chat ? (
+        <div className="border rounded-2xl m-2">
+          <h1 className="text-2xl font-semibold px-4 py-2">
+            Chat With Other Team Members
+          </h1>
+          <div className="px-4 py-2 overflow-auto max-h-48">
+            {discussionData?.map((discuss, index) => (
+              <div
+                key={index}
+                className=" flex border-b p-2 justify-between items-center"
+              >
+                <div className="flex space-x-2">
+                  <p className="font-semibold text-chart-1 ">
+                    {discuss.userName}
+                  </p>
+                  <p className=" ">{discuss.message}</p>
+                </div>
+                <p className="text-sm text-gray-500">{discuss.createdAt}</p>
+              </div>
+            ))}
+          </div>
+          <div className="px-4 py-2 ">
+            <div className="flex justify-between items-center rounded-2xl border-2 p-2">
+              <Label className="">Comment</Label>
+              <Input
+                id="comment"
+                value={comment}
+                type="text"
+                onChange={(e) => setComment(e.target.value)}
+                required
+                className="w-5/6"
+              ></Input>
+              <Button className="" type="submit" onClick={handleChat}>
+                Chat
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <></>
+      )}
+      {searchOn ? (
         <div className=" p-4 flex flex-wrap">
           <div className="flex flex-col rounded-2xl border-2 w-1/2 p-2">
             <h1 className="text-lg p-2">Add Members</h1>
@@ -196,7 +317,13 @@ export default function TeamPage({ params }) {
           ) : (
             <></>
           )}
-          <Card className="w-screen mt-2">
+        </div>
+      ) : (
+        <></>
+      )}
+      {addTask ? (
+        <div className="p-4 ">
+          <Card className="max-w mt-2">
             <CardHeader>
               <CardTitle className="text-2xl">Create a task</CardTitle>
               <CardDescription>
@@ -291,56 +418,85 @@ export default function TeamPage({ params }) {
       ) : (
         <></>
       )}
-      <h1 className="text-2xl font-semibold p-2">Current ongoing tasks</h1>
-      <div className="border-8 flex-wrap">
-        {teamData?.teamTasks?.map((task, index) => (
-          <>
-            {task.status != "done" ? (
-              <div className=" flex-col font-semibold text-lg text-wrap border p-2 m-2 rounded-2xl w-1/3">
-                <h2 className="p-1">Task Name: {task.taskName}</h2>
-                <p className="p-1">Task Description: {task.description}</p>
-                <p className="p-1">Task Status: {task.status}</p>
-                <p className="p-1">Due Date: {task.dueDate.slice(0, 10)}</p>
-                <p className="p-1">Assigned To: {task.assignedTo.join(", ")}</p>
-                <Button
-                  className="m-1"
-                  onClick={async () => {
-                    await updateTeam(
-                      { name: teamName, "teamTasks.taskName": task.taskName },
-                      {
-                        $set: {
-                          "teamTasks.$.status": "in-progress",
-                        },
-                      }
-                    );
-                    fetchTeamData();
-                  }}
-                >
-                  In-progress
-                </Button>
-                <Button
-                  className=""
-                  onClick={async () => {
-                    await updateTeam(
-                      { name: teamName, "teamTasks.taskName": task.taskName },
-                      {
-                        $set: {
-                          "teamTasks.$.status": "done",
-                        },
-                      }
-                    );
-                    fetchTeamData();
-                  }}
-                >
-                  Done
-                </Button>
-              </div>
-            ) : (
-              <></>
-            )}
-          </>
-        ))}
+      <h1 className="text-2xl font-semibold px-4 py-2">
+        Current ongoing tasks
+      </h1>
+      <div className="px-4 py-2">
+        <div className="flex flex-wrap">
+          {teamData?.teamTasks
+            .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
+            .map((task, index) => (
+              <>
+                {task.status != "done" ? (
+                  <div className=" flex-col font-semibold text-wrap border p-4 m-1 rounded-2xl w-1/4">
+                    <h2 className="">Task Name: {task.taskName}</h2>
+                    <p className="">Task Description: {task.description}</p>
+                    <p className="">Task Status: {task.status}</p>
+                    <p className="">Due Date: {task.dueDate.slice(0, 10)}</p>
+                    <p className="">
+                      Assigned To: {task.assignedTo.join(", ")}
+                    </p>
+                    <Button
+                      className="m-1"
+                      onClick={async () => {
+                        await updateTeam(
+                          {
+                            name: teamName,
+                            "teamTasks.taskName": task.taskName,
+                          },
+                          {
+                            $set: {
+                              "teamTasks.$.status": "in-progress",
+                            },
+                          }
+                        );
+                        fetchTeamData();
+                      }}
+                    >
+                      In-progress
+                    </Button>
+                    <Button
+                      className=""
+                      onClick={async () => {
+                        await updateTeam(
+                          {
+                            name: teamName,
+                            "teamTasks.taskName": task.taskName,
+                          },
+                          {
+                            $set: {
+                              "teamTasks.$.status": "done",
+                            },
+                          }
+                        );
+                        fetchTeamData();
+                      }}
+                    >
+                      Done
+                    </Button>
+                  </div>
+                ) : (
+                  <></>
+                )}
+              </>
+            ))}
+        </div>
       </div>
-    </>
+      <div className="px-4 py-2 flex-col">
+        <h1 className="text-2xl font-semibold py-2">Completed Tasks</h1>
+        <div className="flex flex-wrap">
+          {teamData?.teamTasks
+            .filter((task) => task.status === "done")
+            .map((task, index) => (
+              <div
+                key={index}
+                className=" flex font-semibold text-wrap border p-4 m-1 rounded-2xl w-1/4"
+              >
+                <h2 className="">Task Name: {task.taskName}</h2>
+              </div>
+            ))}
+        </div>
+      </div>
+    </div>
   );
 }
