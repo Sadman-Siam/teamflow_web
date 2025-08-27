@@ -105,7 +105,7 @@ export default function Home() {
 
           {userData && !userLoading ? (
             <div>
-              <div className="flex flex-col border-2 rounded-2xl mt-6 border-chart-1">
+              <div className="flex flex-col border-2 rounded-2xl mt-6">
                 <h1 className="text-xl p-4">
                   Create a team and start collaborating with your team members
                 </h1>
@@ -132,23 +132,23 @@ export default function Home() {
                 </Button>
               </div>
               <h1 className="p-2 text-2xl">All your active teams</h1>
-              <div className="flex flex-wrap">
+              <div className="flex-col m-2">
                 {userData?.team?.map(
                   (team) => (
                     console.log("Rendering team:", team),
                     (
                       <div
                         key={team.teamName}
-                        className="mx-1 p-2 flex flex-col border-2 rounded-2xl mt-3 border-chart-1 w-1/5 h-30"
+                        className="p-2 flex justify-between items-center border-2 rounded-2xl mb-2 "
                       >
                         <h2 className="font-semibold  ">
-                          Name :{team.teamName}
+                          Name:&nbsp;{team.teamName}
                         </h2>
                         <Link
-                          className="pt-6"
+                          className="pt-2 "
                           href={`/teams/${team.teamName}/${team._id}`}
                         >
-                          <Button>View Team</Button>
+                          <Button className="bg-chart-1">View Team</Button>
                         </Link>
                       </div>
                     )
