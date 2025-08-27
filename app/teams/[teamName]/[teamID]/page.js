@@ -23,6 +23,7 @@ import { useEffect, useState, useCallback } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export default function TeamPage({ params }) {
   const { teamName, teamID } = params;
@@ -186,6 +187,9 @@ export default function TeamPage({ params }) {
         </div>
         {currentRole ? (
           <div className="space-x-2">
+            <Link className="pt-2 " href={`/admin/${teamName}/${teamID}`}>
+              <Button className="bg-chart-1">Admin Panel</Button>
+            </Link>
             <Button
               onClick={() => {
                 searchOn ? setSearchOn(false) : setSearchOn(true);
@@ -202,7 +206,7 @@ export default function TeamPage({ params }) {
             </Button>
             <Button
               onClick={() => {
-                chat ? setChat(false) : setChat(true);
+                chat ? setChat(false) : setChat(true), fetchDiscussionData();
               }}
             >
               Chat
@@ -212,7 +216,7 @@ export default function TeamPage({ params }) {
           <div className="space-x-2">
             <Button
               onClick={() => {
-                chat ? setChat(false) : setChat(true);
+                chat ? setChat(false) : setChat(true), fetchDiscussionData();
               }}
             >
               Chat
@@ -418,83 +422,132 @@ export default function TeamPage({ params }) {
       ) : (
         <></>
       )}
-      <h1 className="text-2xl font-semibold px-4 py-2">
-        Current ongoing tasks
-      </h1>
-      <div className="px-4 py-2">
-        <div className="flex flex-wrap">
-          {teamData?.teamTasks
-            .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
-            .map((task, index) => (
-              <>
-                {task.status != "done" ? (
-                  <div className=" flex-col font-semibold text-wrap border p-4 m-1 rounded-2xl w-1/4">
-                    <h2 className="">Task Name: {task.taskName}</h2>
-                    <p className="">Task Description: {task.description}</p>
-                    <p className="">Task Status: {task.status}</p>
-                    <p className="">Due Date: {task.dueDate.slice(0, 10)}</p>
-                    <p className="">
-                      Assigned To: {task.assignedTo.join(", ")}
-                    </p>
-                    <Button
-                      className="m-1"
-                      onClick={async () => {
-                        await updateTeam(
-                          {
-                            name: teamName,
-                            "teamTasks.taskName": task.taskName,
-                          },
-                          {
-                            $set: {
-                              "teamTasks.$.status": "in-progress",
-                            },
-                          }
-                        );
-                        fetchTeamData();
-                      }}
-                    >
-                      In-progress
-                    </Button>
-                    <Button
-                      className=""
-                      onClick={async () => {
-                        await updateTeam(
-                          {
-                            name: teamName,
-                            "teamTasks.taskName": task.taskName,
-                          },
-                          {
-                            $set: {
-                              "teamTasks.$.status": "done",
-                            },
-                          }
-                        );
-                        fetchTeamData();
-                      }}
-                    >
-                      Done
-                    </Button>
-                  </div>
-                ) : (
-                  <></>
-                )}
-              </>
-            ))}
-        </div>
-      </div>
-      <div className="px-4 py-2 flex-col">
-        <h1 className="text-2xl font-semibold py-2">Completed Tasks</h1>
-        <div className="flex flex-wrap">
-          {teamData?.teamTasks
-            .filter((task) => task.status === "done")
-            .map((task, index) => (
-              <div
-                key={index}
-                className=" flex font-semibold text-wrap border p-4 m-1 rounded-2xl w-1/4"
-              >
-                <h2 className="">Task Name: {task.taskName}</h2>
+      <div>
+        <div className="flex">
+          <div className=" w-10/12">
+            <h1 className="text-2xl font-semibold px-4 py-2">
+              Current ongoing tasks
+            </h1>
+            <div className="px-4 py-2">
+              <div className="flex flex-wrap">
+                {teamData?.teamTasks
+                  .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
+                  .map((task, index) => (
+                    <>
+                      {task.status != "done" ? (
+                        <div className=" flex-col font-semibold text-wrap border p-4 m-1 rounded-2xl min-w-96">
+                          <h2 className="">Task Name: {task.taskName}</h2>
+                          <p className="">
+                            Task Description: {task.description}
+                          </p>
+                          <p className="">Task Status: {task.status}</p>
+                          <p className="">
+                            Due Date: {task.dueDate.slice(0, 10)}
+                          </p>
+                          <div className="flex space-x-2">
+                            Assigned To:&nbsp;
+                            {task.assignedTo?.map((user, index) => (
+                              <div className="flex space-x-2" key={index}>
+                                <p className=" flex space-x-2">
+                                  {" " + user.userName},
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                          <Button
+                            className="mr-2"
+                            onClick={async () => {
+                              await updateTeam(
+                                {
+                                  name: teamName,
+                                  "teamTasks.taskName": task.taskName,
+                                },
+                                {
+                                  $set: {
+                                    "teamTasks.$.status": "in-progress",
+                                  },
+                                }
+                              );
+                              fetchTeamData();
+                            }}
+                          >
+                            In-progress
+                          </Button>
+                          <Button
+                            className="bg-chart-1"
+                            onClick={async () => {
+                              await updateTeam(
+                                {
+                                  name: teamName,
+                                  "teamTasks.taskName": task.taskName,
+                                },
+                                {
+                                  $set: {
+                                    "teamTasks.$.status": "done",
+                                  },
+                                }
+                              );
+                              fetchTeamData();
+                            }}
+                          >
+                            Done
+                          </Button>
+                        </div>
+                      ) : (
+                        <></>
+                      )}
+                    </>
+                  ))}
               </div>
-            ))}
+            </div>
+          </div>
+          <div>
+            <p className="text-lg font-semibold text-chart-1">
+              Upcomming Due Date
+            </p>
+            {teamData?.teamTasks
+              .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
+              .map((task, index) => (
+                <>
+                  {task.status != "done" ? (
+                    <div
+                      key={index}
+                      className="border-b-2 border-l-2 mb-2 p-2 rounded-2xl border-chart-1"
+                    >
+                      <p>Task Name: {task.taskName}</p>
+                      <p>
+                        Remain Time:{" "}
+                        {Math.max(
+                          0,
+                          Math.floor(
+                            (new Date(task.dueDate) - new Date()) /
+                              (1000 * 60 * 60 * 24)
+                          )
+                        )}{" "}
+                        days
+                      </p>
+                    </div>
+                  ) : (
+                    <></>
+                  )}
+                </>
+              ))}
+          </div>
+        </div>
+        <div className="px-4 py-2 flex-col">
+          <h1 className="text-2xl font-semibold py-2">Completed Tasks</h1>
+          <div className="flex flex-wrap">
+            {teamData?.teamTasks
+              .filter((task) => task.status === "done")
+              .map((task, index) => (
+                <div
+                  key={index}
+                  className=" flex font-semibold text-wrap border p-4 m-1 rounded-2xl w-1/4"
+                >
+                  <h2 className="">Task Name: {task.taskName}</h2>
+                </div>
+              ))}
+          </div>
         </div>
       </div>
     </div>
