@@ -184,6 +184,8 @@ export default function Home() {
               </Button>
             </Link>
           </div>
+          <p>Its a ongoing Project Some features are still under development</p>
+          <p>You might encounter some bugs or issues</p>
         </div>
       )}
     </>
