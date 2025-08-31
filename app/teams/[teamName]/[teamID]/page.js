@@ -13,6 +13,7 @@ import { useAuth } from "@/app/context/authcontext";
 import { useUserData } from "@/app/context";
 import { getTeam, updateTeam, deleteTeam } from "@/services/teamService";
 import { getUser, updateUser } from "@/services/userService";
+import { uploadFile, getFile, deleteFile } from "@/services/fileService";
 import {
   getDiscussions,
   createDiscussion,
@@ -35,9 +36,14 @@ export default function TeamPage({ params }) {
   const [searchOn, setSearchOn] = useState(false);
   const [addTask, setAddTask] = useState(false);
   const [chat, setChat] = useState(false);
+  const [upload, setUpload] = useState(false);
   const [comment, setComment] = useState("");
   const [discussionData, setDiscussionData] = useState([]);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const [teamFiles, setTeamFiles] = useState([]);
   //
+  const [fileName, setFileName] = useState("");
   const [taskName, setTaskName] = useState("");
   const [description, setDescription] = useState("");
   const [date, setDate] = useState("");
@@ -72,6 +78,73 @@ export default function TeamPage({ params }) {
       console.error("Error fetching discussions:", error);
     }
   }, []);
+
+  const fetchTeamFiles = useCallback(async () => {
+    try {
+      const files = await getFile({ teamId: teamID });
+      if (files) {
+        console.log("Files fetched:", files);
+        setTeamFiles(files);
+      }
+    } catch (error) {
+      console.error("Error fetching files:", error);
+    }
+  }, [teamID]);
+
+  const handleFileSelect = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+      setFileName(file.name);
+    }
+  };
+
+  const handleFileUpload = async (event) => {
+    event.preventDefault();
+
+    if (!selectedFile) {
+      alert("Please select a file to upload");
+      return;
+    }
+
+    setUploadLoading(true);
+
+    try {
+      const uploadedFile = await uploadFile({
+        file: selectedFile,
+        userName: userData?.username,
+        teamName: teamName,
+      });
+
+      console.log("File uploaded successfully:", uploadedFile);
+      alert("File uploaded successfully!");
+
+      // Reset form
+      setSelectedFile(null);
+      setFileName("");
+
+      // Refresh files list
+      fetchTeamFiles();
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      alert("Error uploading file. Please try again.");
+    } finally {
+      setUploadLoading(false);
+    }
+  };
+
+  const handleFileDelete = async (fileId, fileName) => {
+    if (window.confirm(`Are you sure you want to delete ${fileName}?`)) {
+      try {
+        await deleteFile(fileId);
+        alert("File deleted successfully!");
+        fetchTeamFiles();
+      } catch (error) {
+        console.error("Error deleting file:", error);
+        alert("Error deleting file. Please try again.");
+      }
+    }
+  };
 
   const handleChat = async () => {
     try {
@@ -211,6 +284,14 @@ export default function TeamPage({ params }) {
             >
               Chat
             </Button>
+            <Button
+              onClick={() => {
+                upload ? setUpload(false) : setUpload(true);
+                if (!upload) fetchTeamFiles();
+              }}
+            >
+              Upload
+            </Button>
           </div>
         ) : (
           <div className="space-x-2">
@@ -221,9 +302,69 @@ export default function TeamPage({ params }) {
             >
               Chat
             </Button>
+            <Button
+              onClick={() => {
+                upload ? setUpload(false) : setUpload(true);
+                if (!upload) fetchTeamFiles();
+              }}
+            >
+              Upload
+            </Button>
           </div>
         )}
       </div>
+      {upload ? (
+        <div className="border rounded-2xl m-2 p-4">
+          <h1 className="text-2xl font-semibold mb-4">Upload File</h1>
+          <form onSubmit={handleFileUpload} className="space-y-4">
+            <div>
+              <Label htmlFor="fileInput">Select File</Label>
+              <Input
+                id="fileInput"
+                type="file"
+                onChange={handleFileSelect}
+                className="mt-2"
+                accept=".txt,.doc,.docx,.pdf,.jpg,.jpeg,.png,.gif,.webp"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="fileName">
+                File Name (Must have a file Name)
+              </Label>
+              <Input
+                id="fileName"
+                value={fileName}
+                type="text"
+                onChange={(e) => setFileName(e.target.value)}
+                placeholder="Enter custom file name or keep original"
+                className="mt-2"
+              />
+            </div>
+
+            {selectedFile && (
+              <div className="p-3 bg-gray-50 rounded border">
+                <p className="text-sm font-medium">Selected File:</p>
+                <p className="text-sm text-gray-600">{selectedFile.name}</p>
+                <p className="text-sm text-gray-600">
+                  Size: {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                </p>
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              disabled={!selectedFile || uploadLoading}
+              className="w-full"
+            >
+              {uploadLoading ? "Uploading..." : "Upload File"}
+            </Button>
+          </form>
+        </div>
+      ) : (
+        <></>
+      )}
       {chat ? (
         <div className="border rounded-2xl m-2">
           <h1 className="text-2xl font-semibold px-4 py-2">
