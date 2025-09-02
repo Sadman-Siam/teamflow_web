@@ -59,6 +59,17 @@ export default function AdminPage({ params }) {
                     },
                   }
                 );
+                await updateTeam(
+                  { name: teamName },
+                  {
+                    $push: {
+                      teamLog: {
+                        userName: userData.username,
+                        action: "Team Member Role updated",
+                      },
+                    },
+                  }
+                );
                 fetchTeamData();
               }}
             >
@@ -85,6 +96,17 @@ export default function AdminPage({ params }) {
                       $pull: {
                         team: {
                           teamName: teamName,
+                        },
+                      },
+                    }
+                  );
+                  await updateTeam(
+                    { name: teamName },
+                    {
+                      $push: {
+                        teamLog: {
+                          userName: userData.username,
+                          action: "Team Member Removed",
                         },
                       },
                     }

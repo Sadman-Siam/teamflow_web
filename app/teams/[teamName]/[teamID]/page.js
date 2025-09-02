@@ -258,6 +258,7 @@ Please provide a professional report with analysis.`;
     try {
       if (chat && comment != "") {
         const newChat = await createDiscussion({
+          teamName: teamName,
           userName: userData.username,
           message: comment,
         });
@@ -303,6 +304,10 @@ Please provide a professional report with analysis.`;
               description: description,
               assignedTo: assignedToArray,
               dueDate: date,
+            },
+            teamLog: {
+              userName: userData.username,
+              action: "assign_task",
             },
           },
         }
@@ -482,20 +487,22 @@ Please provide a professional report with analysis.`;
             Chat With Other Team Members
           </h1>
           <div className="px-4 py-2 overflow-auto max-h-48">
-            {discussionData?.map((discuss, index) => (
-              <div
-                key={index}
-                className=" flex border-b p-2 justify-between items-center"
-              >
-                <div className="flex space-x-2">
-                  <p className="font-semibold text-chart-1 ">
-                    {discuss.userName}
-                  </p>
-                  <p className=" ">{discuss.message}</p>
+            {discussionData
+              ?.filter((discuss) => discuss.teamName == teamName)
+              .map((discuss, index) => (
+                <div
+                  key={index}
+                  className=" flex border-b p-2 justify-between items-center"
+                >
+                  <div className="flex space-x-2">
+                    <p className="font-semibold text-chart-1 ">
+                      {discuss.userName}
+                    </p>
+                    <p className=" ">{discuss.message}</p>
+                  </div>
+                  <p className="text-sm text-gray-500">{discuss.createdAt}</p>
                 </div>
-                <p className="text-sm text-gray-500">{discuss.createdAt}</p>
-              </div>
-            ))}
+              ))}
           </div>
           <div className="px-4 py-2 ">
             <div className="flex justify-between items-center rounded-2xl border-2 p-2">
@@ -553,6 +560,17 @@ Please provide a professional report with analysis.`;
                             teamRequests: {
                               teamId: teamID,
                               teamName: teamName,
+                            },
+                          },
+                        }
+                      );
+                      await updateTeam(
+                        { name: teamName },
+                        {
+                          $push: {
+                            teamLog: {
+                              userName: userData.username,
+                              action: "Sent team Request",
                             },
                           },
                         }
@@ -720,6 +738,17 @@ Please provide a professional report with analysis.`;
                                   },
                                 }
                               );
+                              await updateTeam(
+                                { name: teamName },
+                                {
+                                  $push: {
+                                    teamLog: {
+                                      userName: userData.username,
+                                      action: "Task Progress Updated",
+                                    },
+                                  },
+                                }
+                              );
                               fetchTeamData();
                             }}
                           >
@@ -736,6 +765,17 @@ Please provide a professional report with analysis.`;
                                 {
                                   $set: {
                                     "teamTasks.$.status": "done",
+                                  },
+                                }
+                              );
+                              await updateTeam(
+                                { name: teamName },
+                                {
+                                  $push: {
+                                    teamLog: {
+                                      userName: userData.username,
+                                      action: "Task Completed",
+                                    },
                                   },
                                 }
                               );

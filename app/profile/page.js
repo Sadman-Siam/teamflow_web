@@ -45,9 +45,14 @@ export default function ProfilePage() {
               userName: userData.username,
               userEmail: currentUser.email,
             },
+            teamLog: {
+              userName: userData.username,
+              action: "Team Member Added",
+            },
           },
         }
       );
+
       await refetchUserData();
 
       console.log("Team request accepted successfully!");
@@ -64,6 +69,17 @@ export default function ProfilePage() {
           $pull: {
             teamRequests: {
               teamId: teamId,
+            },
+          },
+        }
+      );
+      await updateTeam(
+        { name: teamName },
+        {
+          $push: {
+            teamLog: {
+              userName: userData.username,
+              action: "Team Request Declined",
             },
           },
         }
