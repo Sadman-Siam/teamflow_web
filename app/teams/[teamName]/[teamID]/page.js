@@ -37,6 +37,7 @@ export default function TeamPage({ params }) {
   const [addTask, setAddTask] = useState(false);
   const [chat, setChat] = useState(false);
   const [upload, setUpload] = useState(false);
+  const [activityLog, setActivityLog] = useState(false);
   const [comment, setComment] = useState("");
   const [discussionData, setDiscussionData] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -307,7 +308,7 @@ Please provide a professional report with analysis.`;
             },
             teamLog: {
               userName: userData.username,
-              action: "assign_task",
+              action: "assigned task",
             },
           },
         }
@@ -408,6 +409,14 @@ Please provide a professional report with analysis.`;
             >
               Upload
             </Button>
+            <Button
+              onClick={() => {
+                activityLog ? setActivityLog(false) : setActivityLog(true),
+                  fetchTeamData();
+              }}
+            >
+              Activity Log
+            </Button>
           </div>
         ) : (
           <div className="space-x-2">
@@ -425,6 +434,14 @@ Please provide a professional report with analysis.`;
               }}
             >
               Upload
+            </Button>
+            <Button
+              onClick={() => {
+                activityLog ? setActivityLog(false) : setActivityLog(true),
+                  fetchTeamData();
+              }}
+            >
+              Activity Log
             </Button>
           </div>
         )}
@@ -519,6 +536,27 @@ Please provide a professional report with analysis.`;
                 Chat
               </Button>
             </div>
+          </div>
+        </div>
+      ) : (
+        <></>
+      )}
+      {activityLog ? (
+        <div className="border rounded-2xl m-2">
+          <h1 className="text-2xl font-semibold px-4 py-2">Activity Log</h1>
+          <div className="px-4 py-2 overflow-auto max-h-48">
+            {teamData.teamLog?.map((log, index) => (
+              <div
+                key={index}
+                className=" flex border-b p-2 justify-between items-center"
+              >
+                <div className="flex space-x-2">
+                  <p className="font-semibold text-chart-1 ">{log.userName}</p>
+                  <p className=" ">{log.action}</p>
+                </div>
+                <p className="text-sm text-gray-500">{log.timestamp}</p>
+              </div>
+            ))}
           </div>
         </div>
       ) : (

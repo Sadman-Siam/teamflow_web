@@ -61,7 +61,7 @@ export default function ProfilePage() {
     }
   };
 
-  const handleTeamRequestDecline = async (teamId) => {
+  const handleTeamRequestDecline = async (teamId, teamName) => {
     try {
       await updateUser(
         { email: currentUser.email },
@@ -152,7 +152,7 @@ export default function ProfilePage() {
                   Your Teams
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {userData?.teams?.length || 0} teams
+                  {userData?.team?.length || 0} teams
                 </p>
               </div>
             </div>
@@ -161,7 +161,7 @@ export default function ProfilePage() {
           )}
         </CardContent>
       </Card>
-      <div className="mt-4">
+      <div className="mt-4 p-2">
         <h1 className="text-2xl font-bold mb-4">Team Requests</h1>
         {userData?.teamRequests && userData.teamRequests.length > 0 ? (
           <div className="space-y-2">
@@ -185,7 +185,9 @@ export default function ProfilePage() {
                     Accept
                   </Button>
                   <Button
-                    onClick={() => handleTeamRequestDecline(request.teamId)}
+                    onClick={() =>
+                      handleTeamRequestDecline(request.teamId, request.teamName)
+                    }
                   >
                     Decline
                   </Button>
