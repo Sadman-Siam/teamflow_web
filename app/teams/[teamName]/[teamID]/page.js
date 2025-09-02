@@ -13,7 +13,12 @@ import { useAuth } from "@/app/context/authcontext";
 import { useUserData } from "@/app/context";
 import { getTeam, updateTeam, deleteTeam } from "@/services/teamService";
 import { getUser, updateUser } from "@/services/userService";
-import { uploadFile, getFile, deleteFile } from "@/services/fileService";
+import {
+  uploadFile,
+  getFile,
+  deleteFile,
+  downloadFile,
+} from "@/services/fileService";
 import {
   getDiscussions,
   createDiscussion,
@@ -83,7 +88,7 @@ export default function TeamPage({ params }) {
 
   const fetchTeamFiles = useCallback(async () => {
     try {
-      const files = await getFile({ teamId: teamID });
+      const files = await getFile({ teamName: teamName });
       if (files) {
         console.log("Files fetched:", files);
         setTeamFiles(files);
@@ -91,7 +96,7 @@ export default function TeamPage({ params }) {
     } catch (error) {
       console.error("Error fetching files:", error);
     }
-  }, [teamID]);
+  }, [teamName]);
 
   const handleFileSelect = (event) => {
     const file = event.target.files[0];
@@ -240,18 +245,6 @@ Please provide a professional report with analysis.`;
       alert(`Error: ${error.message}`);
     } finally {
       setReportLoading(false);
-    }
-  };
-  const handleFileDelete = async (fileId, fileName) => {
-    if (window.confirm(`Are you sure you want to delete ${fileName}?`)) {
-      try {
-        await deleteFile(fileId);
-        alert("File deleted successfully!");
-        fetchTeamFiles();
-      } catch (error) {
-        console.error("Error deleting file:", error);
-        alert("Error deleting file. Please try again.");
-      }
     }
   };
 
@@ -403,8 +396,7 @@ Please provide a professional report with analysis.`;
             </Button>
             <Button
               onClick={() => {
-                upload ? setUpload(false) : setUpload(true);
-                if (!upload) fetchTeamFiles();
+                upload ? setUpload(false) : setUpload(true), fetchTeamFiles();
               }}
             >
               Upload
@@ -429,8 +421,7 @@ Please provide a professional report with analysis.`;
             </Button>
             <Button
               onClick={() => {
-                upload ? setUpload(false) : setUpload(true);
-                if (!upload) fetchTeamFiles();
+                upload ? setUpload(false) : setUpload(true), fetchTeamFiles();
               }}
             >
               Upload
@@ -877,6 +868,42 @@ Please provide a professional report with analysis.`;
                   <h2 className="">Task Name: {task.taskName}</h2>
                 </div>
               ))}
+          </div>
+        </div>
+        <div className="px-4 py-2 flex-col">
+          <h1 className="text-2xl font-semibold py-2">Uploaded Files</h1>
+          <div className="flex flex-wrap w-full">
+            {teamFiles.map((file, index) => (
+              <div key={index} className="py-2 mx-2 w-80">
+                <div className="border-2 rounded-2xl p-2">
+                  <p className="font-medium">Uploaded by: {file.userName}</p>
+                  <p className="text-sm text-muted-foreground">
+                    FileName: {file.fileName}
+                  </p>
+                  <Button
+                    className="mr-2"
+                    onClick={() =>
+                      downloadFile({ originalName: file.originalName })
+                    }
+                  >
+                    Download
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      try {
+                        deleteFile({ originalName: file.originalName });
+                      } catch (error) {
+                        console.log(error);
+                      } finally {
+                        fetchTeamFiles;
+                      }
+                    }}
+                  >
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

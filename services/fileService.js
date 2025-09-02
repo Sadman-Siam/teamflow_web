@@ -55,9 +55,10 @@ const updateFile = async (fileId, updateData) => {
 };
 
 // Delete a file
-const deleteFile = async (fileId) => {
+const deleteFile = async (query = {}) => {
   try {
-    const response = await axiosClient.delete(`/api/files/${fileId}`);
+    const queryString = new URLSearchParams(query).toString();
+    const response = await axiosClient.delete(`/api/files?${queryString}`);
     return response.data;
   } catch (error) {
     console.error("Error deleting file:", error);
@@ -65,4 +66,45 @@ const deleteFile = async (fileId) => {
   }
 };
 
-export { uploadFile, getFile, updateFile, deleteFile };
+// Download a file
+const downloadFile = async (query = {}) => {
+  try {
+    const queryString = new URLSearchParams(query).toString();
+    const url = queryString
+      ? `/api/files/download?${queryString}`
+      : "/api/files/download";
+
+    const response = await axiosClient.get(url, {
+      responseType: "blob", // Important for file downloads
+    });
+
+    // Get filename from Content-Disposition header or use a default
+    const contentDisposition = response.headers["content-disposition"];
+    let filename = "download";
+
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+      if (filenameMatch) {
+        filename = filenameMatch[1];
+      }
+    }
+
+    // Create blob URL and trigger download
+    const blob = new Blob([response.data]);
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = downloadUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(downloadUrl);
+
+    return { success: true, filename };
+  } catch (error) {
+    console.error("Error downloading file:", error);
+    throw error;
+  }
+};
+
+export { uploadFile, getFile, updateFile, deleteFile, downloadFile };
