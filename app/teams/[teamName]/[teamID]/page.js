@@ -49,6 +49,7 @@ export default function TeamPage({ params }) {
   const [date, setDate] = useState("");
   const [currentRole, setCurrentRole] = useState(false);
   const [selectedMembers, setSelectedMembers] = useState([]);
+  const [reportLoading, setReportLoading] = useState(false);
 
   // Move fetchTeamData outside useEffect so it can be reused
   const fetchTeamData = useCallback(async () => {
@@ -132,7 +133,114 @@ export default function TeamPage({ params }) {
       setUploadLoading(false);
     }
   };
+  const handleReportGeneration = async () => {
+    try {
+      if (!teamData) {
+        alert("No team data available to generate report");
+        return;
+      }
 
+      setReportLoading(true);
+
+      // Simple data preparation
+      const tasks = teamData.teamTasks || [];
+      const members = teamData.members || [];
+      const completedTasks = tasks.filter(
+        (task) => task.status === "done"
+      ).length;
+      const pendingTasks = tasks.filter(
+        (task) => !task.status || task.status === "pending"
+      ).length;
+      const inProgressTasks = tasks.filter(
+        (task) => task.status === "in-progress"
+      ).length;
+
+      // Create prompt for Gemini
+      const prompt = `Generate a team performance report for:
+
+Team: ${teamData.name}
+Owner: ${teamData.owner}
+Members: ${members.length}
+
+Tasks Overview:
+- Total: ${tasks.length}
+- Completed: ${completedTasks}
+- In Progress: ${inProgressTasks}
+- Pending: ${pendingTasks}
+
+Team Members:
+${members.map((member) => `${member.userName} (${member.role})`).join("\n")}
+
+Recent Tasks:
+${tasks
+  .slice(0, 10)
+  .map(
+    (task) =>
+      `${task.taskName} - ${task.status || "pending"} - Due: ${task.dueDate}`
+  )
+  .join("\n")}
+
+Please provide a professional report with analysis.`;
+
+      // Call Gemini API
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${process.env.NEXT_PUBLIC_GEMINI_API_KEY}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { maxOutputTokens: 2048 },
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const report = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+      if (!report) {
+        throw new Error("No report generated");
+      }
+
+      // Open report in new window
+      const reportWindow = window.open("", "_blank");
+      reportWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Team Report - ${teamData.name}</title>
+          <style>
+            body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+            .header { border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-bottom: 20px; }
+            .report-content { white-space: pre-wrap; }
+            .print-btn { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>Team Performance Report</h1>
+            <p><strong>Team:</strong> ${teamData.name}</p>
+            <p><strong>Generated:</strong> ${new Date().toLocaleDateString()}</p>
+          </div>
+          <button class="print-btn" onclick="window.print()">Print Report</button>
+          <div class="report-content">${report}</div>
+        </body>
+        </html>
+      `);
+      reportWindow.document.close();
+
+      alert("Report generated successfully!");
+    } catch (error) {
+      console.error("Error generating report:", error);
+      alert(`Error: ${error.message}`);
+    } finally {
+      setReportLoading(false);
+    }
+  };
   const handleFileDelete = async (fileId, fileName) => {
     if (window.confirm(`Are you sure you want to delete ${fileName}?`)) {
       try {
@@ -263,6 +371,9 @@ export default function TeamPage({ params }) {
             <Link className="pt-2 " href={`/admin/${teamName}/${teamID}`}>
               <Button className="bg-chart-1">Admin Panel</Button>
             </Link>
+            <Button onClick={handleReportGeneration} disabled={reportLoading}>
+              {reportLoading ? "Generating..." : "Generate Report"}
+            </Button>
             <Button
               onClick={() => {
                 searchOn ? setSearchOn(false) : setSearchOn(true);
